@@ -22,5 +22,6 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "rake", "~> 10.0"
+  # Ruby >= 3.4 compat: base64 no longer in stdlib
+  spec.add_dependency "base64"
 end
