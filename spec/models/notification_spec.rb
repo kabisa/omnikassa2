@@ -88,6 +88,36 @@ describe Omnikassa2::Notification do
         expect(subject.valid_signature?).to eq(false)
       end
     end
+
+    context 'when timestamp has different precision' do
+      # Rabobank may send timestamps with varying precision (2 vs 3 decimals).
+      # Signature verification must use the original timestamp string,
+      # not a re-formatted version, to avoid precision mismatches.
+      let(:expiry_with_2_decimals) { '2016-11-25T09:53:46.76+01:00' }
+      let(:signature_for_2_decimals) do
+        'f97c90c4a3716b2d31c46f02aa00e760cf6e599d9198b9c80d25c2fb7c70086ad559ff8606115c5f14ce11ed7605d262032be441873b28bba3670f07fe870d18'
+      end
+
+      subject do
+        Omnikassa2::Notification.from_json(
+          JSON.generate(
+            authentication: authentication_token,
+            expiry: expiry_with_2_decimals,
+            eventName: 'merchant.order.status.changed',
+            poiId: 123,
+            signature: signature_for_2_decimals
+          )
+        )
+      end
+
+      it 'preserves original timestamp precision for signature verification' do
+        expect(subject.expiry_raw).to eq(expiry_with_2_decimals)
+      end
+
+      it 'validates signature using original timestamp string' do
+        expect(subject.valid_signature?).to eq(true)
+      end
+    end
   end
 
   describe 'expiring?' do
