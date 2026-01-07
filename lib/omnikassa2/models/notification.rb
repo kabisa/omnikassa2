@@ -4,6 +4,7 @@ module Omnikassa2
 
     attr_reader :authentication
     attr_reader :expiry
+    attr_reader :expiry_raw
     attr_reader :event_name
     attr_reader :poi_id
     attr_reader :signature
@@ -11,6 +12,7 @@ module Omnikassa2
     def initialize(params)
       @authentication = params.fetch(:authentication)
       @expiry = params.fetch(:expiry)
+      @expiry_raw = params.fetch(:expiry_raw) { @expiry.iso8601(3) }
       @event_name = params.fetch(:event_name)
       @poi_id = params.fetch(:poi_id)
       @signature = params.fetch(:signature)
@@ -21,6 +23,7 @@ module Omnikassa2
       Notification.new(
         authentication: hash['authentication'],
         expiry: Time.parse(hash['expiry']),
+        expiry_raw: hash['expiry'],
         event_name: hash['eventName'],
         poi_id: hash['poiId'],
         signature: hash['signature']
@@ -44,7 +47,7 @@ module Omnikassa2
     def self.csv_serializer
       CSVSerializer.new([
         { field: :authentication },
-        { field: :expiry },
+        { field: :expiry_raw },
         { field: :event_name },
         { field: :poi_id }
       ])

@@ -29,6 +29,7 @@ module Omnikassa2
             poi_id: order['poiId'],
             order_status: order['orderStatus'],
             order_status_date_time: Time.parse(order['orderStatusDateTime']),
+            order_status_date_time_raw: order['orderStatusDateTime'],
             error_code: order['errorCode'],
             paid_amount: Money.new(
               amount: order['paidAmount']['amount'].to_i,
@@ -56,7 +57,7 @@ module Omnikassa2
             { field: :omnikassa_order_id },
             { field: :poi_id },
             { field: :order_status },
-            { field: :order_status_date_time },
+            { field: :order_status_date_time_raw },
             { field: :error_code },
             {
               field: :paid_amount,

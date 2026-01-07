@@ -131,5 +131,38 @@ describe Omnikassa2::OrderResultSet do
         expect(subject.valid_signature?).to eq(false)
       end
     end
+
+    context 'when timestamp has different precision' do
+      # Rabobank may send timestamps with varying precision (2 vs 3 decimals).
+      # Signature verification must use the original timestamp string,
+      # not a re-formatted version, to avoid precision mismatches.
+      let(:timestamp_2_decimals) { '2016-11-25T13:20:03.15+01:00' }
+      let(:signature_for_2_decimals) do
+        '79449eced4c26f3db54b8be74d3d1a7925c6b6bce995731b4622a0b7d073032f56b3f27424e2c292bcd54ac914ca7845d6f172b082657abc7aecbb244f7df199'
+      end
+
+      let(:json_params_2_decimals) do
+        json_params.merge(
+          signature: signature_for_2_decimals,
+          orderResults: [
+            json_params[:orderResults].first.merge(
+              orderStatusDateTime: timestamp_2_decimals
+            )
+          ]
+        )
+      end
+
+      subject do
+        Omnikassa2::OrderResultSet.from_json(JSON.generate(json_params_2_decimals))
+      end
+
+      it 'preserves original timestamp precision for signature verification' do
+        expect(subject.order_results.first.order_status_date_time_raw).to eq(timestamp_2_decimals)
+      end
+
+      it 'validates signature using original timestamp string' do
+        expect(subject.valid_signature?).to eq(true)
+      end
+    end
   end
 end
