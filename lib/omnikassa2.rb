@@ -1,6 +1,7 @@
 require 'openssl'
 require 'net/http'
 require 'base64'
+require 'json'
 
 require 'omnikassa2/version'
 
@@ -107,6 +108,9 @@ module Omnikassa2
   class ExpiringNotificationError < OmniKassaError
   end
 
-  class HttpError < OmniKassaError
+  # Inherits from JSON::ParserError for backwards compatibility:
+  # HTTP errors previously surfaced as JSON::ParserError when the
+  # non-JSON error response body was parsed.
+  class HttpError < JSON::ParserError
   end
 end
