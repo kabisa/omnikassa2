@@ -118,4 +118,23 @@ describe Omnikassa2::CSVSerializer do
 
     expect(csv_string).to eq('Hello World,123')
   end
+
+  it 'excludes empty nested arrays' do
+    exporter = Omnikassa2::CSVSerializer.new([
+      { field: :field_one },
+      {
+        field: :nested,
+        nested_fields: [
+          { field: :inner }
+        ]
+      }
+    ])
+
+    csv_string = exporter.serialize({
+      field_one: false,
+      nested: []
+    })
+
+    expect(csv_string).to eq('false')
+  end
 end

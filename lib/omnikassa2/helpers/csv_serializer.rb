@@ -39,7 +39,8 @@ module Omnikassa2
       elsif nested_fields.nil?
         value
       else
-        CSVSerializer.new(nested_fields).serialize(value)
+        result = CSVSerializer.new(nested_fields).serialize(value)
+        result.empty? ? nil : result
       end
     end
 
