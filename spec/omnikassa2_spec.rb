@@ -1,4 +1,62 @@
 describe Omnikassa2 do
+  describe 'announce order' do
+    before(:each) do
+      # Reset the AccessTokenProvider singleton between tests
+      Omnikassa2::AccessTokenProvider.class_variable_set(:@@instance, nil)
+
+      Omnikassa2.config(
+        ConfigurationFactory.create(
+          signing_key: 'bXlTMWduaW5nSzN5',
+          base_url: 'https://www.example.org/sandbox'
+        )
+      )
+    end
+
+    let(:merchant_order) do
+      MerchantOrderFactory.create(
+        merchant_order_id: 'order123',
+        amount: Omnikassa2::Money.new(amount: 4999, currency: 'EUR'),
+        merchant_return_url: 'http://www.example.org'
+      )
+    end
+
+    context 'when API returns 500 with HTML error page' do
+      before do
+        # Stub the refresh endpoint to return a valid access token
+        WebMock.stub_request(:get, "https://www.example.org/sandbox/gatekeeper/refresh")
+          .to_return(
+            status: 200,
+            body: {
+              token: 'myAccEssT0ken',
+              validUntil: "2099-12-31T23:59:59.999+0000",
+              durationInMillis: 28800000
+            }.to_json,
+            headers: { 'Content-Type' => 'application/json' }
+          )
+
+        # Stub the order endpoint to return 500 with HTML error page
+        WebMock.stub_request(:post, "https://www.example.org/sandbox/order/server/api/order")
+          .to_return(
+            status: 500,
+            body: '<HTML><HEAD><TITLE>Internal Server Error</TITLE></HEAD><BODY>Something went wrong</BODY></HTML>',
+            headers: { 'Content-Type' => 'text/html' }
+          )
+      end
+
+      it 'raises HttpError instead of JSON::ParserError' do
+        expect {
+          Omnikassa2.announce_order(merchant_order)
+        }.to raise_error(Omnikassa2::HttpError, /500.*Internal Server Error/m)
+      end
+
+      it 'includes the HTML body in the error message' do
+        expect {
+          Omnikassa2.announce_order(merchant_order)
+        }.to raise_error(Omnikassa2::HttpError, /Something went wrong/)
+      end
+    end
+  end
+
   describe 'status pull' do
     before(:each) do
       Timecop.freeze Time.parse('2016-11-24T17:30:00.000+0000')

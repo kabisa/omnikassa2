@@ -2,7 +2,7 @@ module Omnikassa2
   class BaseResponse
     def initialize(http_response)
       @http_response = http_response
-      @body =  @http_response.body ? JSON.parse(@http_response.body) : nil
+      @body = parse_body
     end
 
     def json_body
@@ -12,6 +12,20 @@ module Omnikassa2
     def body
       @body
     end
+
+    private
+
+    def parse_body
+      return nil if @http_response.body.nil? || @http_response.body.empty?
+      return nil unless success?
+
+      JSON.parse(@http_response.body)
+    rescue JSON::ParserError
+      # Response body is not valid JSON
+      nil
+    end
+
+    public
 
     def code
       @http_response.code.to_i
@@ -26,9 +40,15 @@ module Omnikassa2
     end
 
     def to_s
-      value = ''
-      value += "Status: #{code}: #{message}\n"
-      value += "Body: #{(body ? body.to_s : 'nil')}"
+      value = "Status: #{code}: #{message}\n"
+      if body
+        value += "Body: #{body}"
+      elsif @http_response.body
+        # Show (part of) raw body for error responses (may be HTML)
+        value += "Body: #{@http_response.body.to_s[0, 500]}"
+      else
+        value += "Body: nil"
+      end
       value
     end
   end
