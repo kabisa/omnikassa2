@@ -1,3 +1,5 @@
+require 'net_http_timeout_errors'
+
 module Omnikassa2
   class BaseRequest
     def initialize(config = {})
@@ -45,6 +47,8 @@ module Omnikassa2
       end
 
       response_decorator.nil? ? http_response : response_decorator.new(http_response)
+    rescue *NetHttpTimeoutErrors.all => e
+      raise Omnikassa2::HttpError, "Request to Rabobank timed out: #{e.message}"
     end
 
     def headers
