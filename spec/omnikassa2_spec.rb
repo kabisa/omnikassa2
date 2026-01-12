@@ -55,6 +55,25 @@ describe Omnikassa2 do
         }.to raise_error(Omnikassa2::HttpError, /Something went wrong/)
       end
     end
+
+    context 'when request times out' do
+      before do
+        WebMock.stub_request(:get, "https://www.example.org/sandbox/gatekeeper/refresh")
+          .to_timeout
+      end
+
+      it 'raises HttpError with descriptive message' do
+        expect {
+          Omnikassa2.announce_order(merchant_order)
+        }.to raise_error(Omnikassa2::HttpError, /Request to Rabobank timed out/)
+      end
+
+      it 'preserves the original timeout error as cause' do
+        Omnikassa2.announce_order(merchant_order)
+      rescue Omnikassa2::HttpError => e
+        expect(e.cause).to be_a(Net::OpenTimeout).or be_a(Timeout::Error)
+      end
+    end
   end
 
   describe 'status pull' do
