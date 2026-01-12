@@ -47,6 +47,7 @@ describe Omnikassa2 do
         expect {
           Omnikassa2.announce_order(merchant_order)
         }.to raise_error(Omnikassa2::HttpError, /500.*Internal Server Error/m)
+         .and output(/DEPRECATION WARNING.*HttpError.*JSON::ParserError/m).to_stderr
       end
 
       it 'includes the HTML body in the error message' do

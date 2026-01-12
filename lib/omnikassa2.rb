@@ -112,5 +112,14 @@ module Omnikassa2
   # HTTP errors previously surfaced as JSON::ParserError when the
   # non-JSON error response body was parsed.
   class HttpError < JSON::ParserError
+    def initialize(message = nil)
+      super
+      warn <<~WARNING.split.join(" ")
+        DEPRECATION WARNING: Omnikassa2::HttpError currently inherits from JSON::ParserError
+        for backwards compatibility. In version 2.0, it will inherit from
+        Omnikassa2::OmniKassaError instead. Please update your rescue clauses to catch
+        Omnikassa2::HttpError explicitly.
+      WARNING
+    end
   end
 end
