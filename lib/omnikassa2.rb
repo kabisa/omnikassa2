@@ -68,7 +68,7 @@ module Omnikassa2
   def self.announce_order(order_announcement)
     response = Omnikassa2::OrderAnnounceRequest.new(order_announcement).send
 
-    raise Omnikassa2::HttpError, response.to_s unless response.success?
+    raise response.error_class, response.to_s unless response.success?
     raise Omnikassa2::InvalidSignatureError unless response.valid_signature?
 
     response
@@ -82,7 +82,7 @@ module Omnikassa2
 
       response = Omnikassa2::StatusPullRequest.new(notification).send
 
-      raise Omnikassa2::HttpError, response.to_s unless response.success?
+      raise response.error_class, response.to_s unless response.success?
       raise Omnikassa2::InvalidSignatureError unless response.valid_signature?
 
       result_set = response.order_result_set
@@ -108,9 +108,31 @@ module Omnikassa2
   class ExpiringNotificationError < OmniKassaError
   end
 
+  # For HTTP errors where Rabobank returned a valid JSON error response
+  class ApiError < OmniKassaError
+    def initialize(message = nil)
+      super
+      warn <<~WARNING.split.join(" ")
+        DEPRECATION WARNING: Omnikassa2::ApiError will be merged into
+        Omnikassa2::HttpError in version 2.0. Please rescue Omnikassa2::HttpError
+        or Omnikassa2::OmniKassaError instead of Omnikassa2::ApiError.
+      WARNING
+    end
+  end
+
   # Inherits from JSON::ParserError for backwards compatibility:
   # HTTP errors previously surfaced as JSON::ParserError when the
   # non-JSON error response body was parsed.
   class HttpError < JSON::ParserError
+    def initialize(message = nil)
+      super
+      warn <<~WARNING.split.join(" ")
+        DEPRECATION WARNING: Omnikassa2::HttpError currently inherits from
+        JSON::ParserError for backwards compatibility. In version 2.0, it will
+        inherit from Omnikassa2::OmniKassaError instead. Please rescue
+        Omnikassa2::HttpError or Omnikassa2::OmniKassaError instead of
+        JSON::ParserError.
+      WARNING
+    end
   end
 end

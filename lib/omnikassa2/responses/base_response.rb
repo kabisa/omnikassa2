@@ -16,7 +16,6 @@ module Omnikassa2
     private
 
     def parse_body
-      return nil unless http_success?
       return nil if @http_response.body.nil? || @http_response.body.empty?
 
       JSON.parse(@http_response.body)
@@ -25,11 +24,20 @@ module Omnikassa2
       nil
     end
 
+    public
+
     def http_success?
       code >= 200 && code < 300
     end
 
-    public
+    # Returns the appropriate error class based on response state
+    def error_class
+      if !http_success? && body
+        Omnikassa2::ApiError
+      else
+        Omnikassa2::HttpError
+      end
+    end
 
     def code
       @http_response.code.to_i
