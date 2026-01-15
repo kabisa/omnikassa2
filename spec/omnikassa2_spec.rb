@@ -55,6 +55,54 @@ describe Omnikassa2 do
         }.to raise_error(Omnikassa2::HttpError, /Something went wrong/)
       end
     end
+
+    context 'when API returns 200 with empty body' do
+      before do
+        WebMock.stub_request(:get, "https://www.example.org/sandbox/gatekeeper/refresh")
+          .to_return(
+            status: 200,
+            body: {
+              token: 'myAccEssT0ken',
+              validUntil: "2099-12-31T23:59:59.999+0000",
+              durationInMillis: 28800000
+            }.to_json,
+            headers: { 'Content-Type' => 'application/json' }
+          )
+
+        WebMock.stub_request(:post, "https://www.example.org/sandbox/order/server/api/order")
+          .to_return(status: 200, body: '')
+      end
+
+      it 'raises HttpError' do
+        expect {
+          Omnikassa2.announce_order(merchant_order)
+        }.to raise_error(Omnikassa2::HttpError, /Body: empty/)
+      end
+    end
+
+    context 'when API returns 200 with invalid JSON' do
+      before do
+        WebMock.stub_request(:get, "https://www.example.org/sandbox/gatekeeper/refresh")
+          .to_return(
+            status: 200,
+            body: {
+              token: 'myAccEssT0ken',
+              validUntil: "2099-12-31T23:59:59.999+0000",
+              durationInMillis: 28800000
+            }.to_json,
+            headers: { 'Content-Type' => 'application/json' }
+          )
+
+        WebMock.stub_request(:post, "https://www.example.org/sandbox/order/server/api/order")
+          .to_return(status: 200, body: 'not valid json {')
+      end
+
+      it 'raises HttpError' do
+        expect {
+          Omnikassa2.announce_order(merchant_order)
+        }.to raise_error(Omnikassa2::HttpError, /not valid json/)
+      end
+    end
   end
 
   describe 'status pull' do
