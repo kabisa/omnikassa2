@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
 
   # Ruby >= 3.4 compat: base64 no longer in stdlib
   spec.add_dependency "base64"
+  spec.add_dependency "net_http_timeout_errors"
 end
